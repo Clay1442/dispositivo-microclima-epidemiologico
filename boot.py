@@ -3,14 +3,18 @@ import time
 
 def connectar_wifi():
     #Simula um roteador que se conectar com este SSID(rede específica) específico
-    ssid = 'SSID'
-    senha = ""
+    ssid = 'COLOQUE AQUI O NOME DO WIFI'
+    senha = "COLOQUE AQUI A SENHA DO WIFI"
 
     #sta_if(station interface) é a interface de rede sem fio do dispositivo, 
     # que é usada para se conectar a redes Wi-Fi
     sta_if = network.WLAN(network.STA_IF)
+    
+    # Se o wifi estiver travado em estado estranho, desativa primeiro
+    sta_if.active(False)
+    time.sleep(0.5)
     sta_if.active(True)
-
+    
     #Verifica se o dispositivo já está conectado a uma rede Wi-Fi. Se não estiver, ele tenta 
     #se conectar à rede especificada pelo SSID e senha fornecidos.
     if not sta_if.isconnected():
@@ -33,3 +37,4 @@ def connectar_wifi():
         print("\nFalha ao conectar à rede Wi-Fi., Verifique as configurações")   
 
 connectar_wifi()
+
