@@ -1,32 +1,60 @@
-import time
-from datetime import datetime
+import json
+from datetime import datetime, timezone
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
+import paho.mqtt.client as mqtt
 
-# Configurações iguais ao do Docker
+# InfluxDB
 token = "meu_token_secreto_123"
 org = "projeto_iot"
 bucket = "microclima_bucket"
-url = "http://localhost:8086"
+influx_url = "http://localhost:8086"
 
-# Inicializa o Cliente
-client = InfluxDBClient(url=url, token=token, org=org)
-write_api = client.write_api(write_options=SYNCHRONOUS)
+influx_client = InfluxDBClient(url=influx_url, token=token, org=org)
+write_api = influx_client.write_api(write_options=SYNCHRONOUS)
 
-def salvar_dado_mock(valor_temp):
-    point = Point("clima") \
-        .tag("sensor", "esp32_teste") \
-        .field("temperatura", valor_temp) \
-        .time(datetime.utcnow(), WritePrecision.NS)
-    
+# MQTT
+MQTT_BROKER = "localhost"
+MQTT_PORT = 1883
+MQTT_TOPIC = "microclima/leituras"
+
+def salvar_no_influx(dados: dict):
+    point = (
+        Point("clima")
+        .tag("sensor", "esp32_01")
+        .tag("status_risco", dados.get("status_risco", "DESCONHECIDO"))
+        .field("temperatura", float(dados["temperatura"]))
+        .field("umidade", float(dados["umidade"]))
+        .field("pressao", float(dados["pressao"]))
+        .field("luminosidade", float(dados["luminosidade"]))
+        .time(datetime.now(timezone.utc), WritePrecision.NS)
+    )
     write_api.write(bucket=bucket, org=org, record=point)
-    print(f"Sucesso: Temperatura {valor_temp} salva no InfluxDB!")
+    print(f"✓ Salvo: {dados['status_risco']} | T:{dados['temperatura']:.1f}°C")
 
-# Teste simples
-if __name__ == "__main__":
+def on_connect(client, userdata, flags, rc):
+    print(f"Conectado ao broker MQTT (código {rc})")
+    client.subscribe(MQTT_TOPIC)
+
+def on_message(client, userdata, msg):
     try:
-        while True:
-            salvar_dado_mock(25.5) # Enviando um valor fixo para testar
-            time.sleep(10)
+        payload = msg.payload.decode("utf-8")
+        dados = json.loads(payload)
+        salvar_no_influx(dados)
+    except Exception as e:
+        print(f"Erro ao processar mensagem: {e}")
+
+if __name__ == "__main__":
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
+
+    try:
+        mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
+        print("Bridge app rodando — aguardando dados do ESP32...")
+        mqtt_client.loop_forever()
     except KeyboardInterrupt:
-        print("Finalizado.")
+        print("Encerrando...")
+    finally:
+        mqtt_client.disconnect()
+        influx_client.close()
