@@ -1,5 +1,7 @@
 .env
 
+bridge-app/mock_esp32.py
+
 __pycache__/
 
 .venv/
