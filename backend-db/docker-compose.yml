@@ -39,6 +39,16 @@ services:
     depends_on:
       - influxdb
 
+  dashboard:
+    image: nginx:alpine
+    container_name: dashboard_sava
+    ports:
+      - "8080:80"
+    volumes:
+      - ../dashboard:/usr/share/nginx/html:ro
+    depends_on:
+      - influxdb
+
 volumes:
   influxdb_storage:
   mosquitto_data:
