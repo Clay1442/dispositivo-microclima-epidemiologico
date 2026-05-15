@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAVA — Monitor de Microclima</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-area">
+      <h1>SAVA</h1>
+      <p>Sistema de Alerta e Vigilância Ambiental</p>
+    </div>
+    <div class="status-bar">
+      <div class="status-indicator">
+        <div class="dot" id="conn-dot"></div>
+        <span id="conn-label">CONECTANDO...</span>
+      </div>
+      <div id="last-update">—</div>
+    </div>
+  </header>
+
+  <!-- Configuração da API -->
+  <div class="config-bar">
+    <label>INFLUXDB URL</label>
+    <input type="text" id="influx-url" value="http://localhost:8086" />
+    <label>TOKEN</label>
+    <input type="text" id="influx-token" value="meu_token_secreto_123" style="width:180px"/>
+    <button class="btn" onclick="conectar()">CONECTAR</button>
+    <button class="btn secondary" onclick="usarDadosMock()">DEMO</button>
+  </div>
+
+  <!-- Banner de risco -->
+  <div class="risk-banner" id="risk-banner">
+    <div>
+      <div class="risk-label">Status de risco atual</div>
+      <div class="risk-value" id="risk-value">—</div>
+      <div class="risk-desc" id="risk-desc">Aguardando dados do sensor...</div>
+    </div>
+    <div class="risk-icon" id="risk-icon">⬡</div>
+  </div>
+
+  <!-- Métricas -->
+  <div class="metrics-grid">
+    <div class="metric-card" style="--card-color: #ff6b6b">
+      <div class="metric-label">Temperatura</div>
+      <div class="metric-value" id="val-temp">—<span class="metric-unit">°C</span></div>
+      <div class="metric-sub" id="sub-temp">Zona de risco: 26–28°C</div>
+    </div>
+    <div class="metric-card" style="--card-color: #4ecdc4">
+      <div class="metric-label">Umidade</div>
+      <div class="metric-value" id="val-umid">—<span class="metric-unit">%</span></div>
+      <div class="metric-sub" id="sub-umid">Zona de risco: 70–80%</div>
+    </div>
+    <div class="metric-card" style="--card-color: #a78bfa">
+      <div class="metric-label">Pressão</div>
+      <div class="metric-value" id="val-press">—<span class="metric-unit" style="font-size:10px">hPa</span></div>
+      <div class="metric-sub" id="sub-press">Normal: ~1013 hPa</div>
+    </div>
+    <div class="metric-card" style="--card-color: #fbbf24">
+      <div class="metric-label">Luminosidade</div>
+      <div class="metric-value" id="val-lux">—<span class="metric-unit" style="font-size:10px">lx</span></div>
+      <div class="metric-sub" id="sub-lux">Penumbra: &lt; 300 lx</div>
+    </div>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div class="chart-title">HISTÓRICO — ÚLTIMA HORA</div>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="trocarGrafico('temperatura', this)">TEMP</button>
+        <button class="chart-tab" onclick="trocarGrafico('umidade', this)">UMID</button>
+        <button class="chart-tab" onclick="trocarGrafico('pressao', this)">PRESS</button>
+        <button class="chart-tab" onclick="trocarGrafico('luminosidade', this)">LUX</button>
+      </div>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- Log de eventos -->
+  <div class="log-section">
+    <div class="log-header">
+      LOG DE LEITURAS
+      <span class="log-count" id="log-count">0</span>
+    </div>
+    <div class="log-list" id="log-list">
+      <div class="connecting-msg">
+        <div class="spinner"></div>
+        Aguardando conexão com o InfluxDB...
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
