@@ -24,12 +24,8 @@
     </div>
   </header>
 
-  <!-- Configuração da API -->
+  <!-- Ações -->
   <div class="config-bar">
-    <label>INFLUXDB URL</label>
-    <input type="text" id="influx-url" value="http://localhost:8086" />
-    <label>TOKEN</label>
-    <input type="text" id="influx-token" value="meu_token_secreto_123" style="width:180px"/>
     <button class="btn" onclick="conectar()">CONECTAR</button>
     <button class="btn secondary" onclick="usarDadosMock()">DEMO</button>
   </div>
@@ -98,6 +94,7 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/config.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
