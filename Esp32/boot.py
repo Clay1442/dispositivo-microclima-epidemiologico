@@ -2,9 +2,14 @@ import network
 import time
 
 def connectar_wifi():
-    #Simula um roteador que se conectar com este SSID(rede específica) específico
-    ssid = 'COLOQUE AQUI O NOME DO WIFI'
-    senha = "COLOQUE AQUI A SENHA DO WIFI"
+    # Credenciais carregadas do arquivo secrets.py (não versionado)
+    try:
+        from secrets import WIFI_SSID, WIFI_SENHA
+        ssid  = WIFI_SSID
+        senha = WIFI_SENHA
+    except ImportError:
+        print("ERRO: crie o arquivo Esp32/secrets.py com WIFI_SSID e WIFI_SENHA")
+        return
 
     #sta_if(station interface) é a interface de rede sem fio do dispositivo, 
     # que é usada para se conectar a redes Wi-Fi
