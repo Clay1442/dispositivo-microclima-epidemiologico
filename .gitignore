@@ -5,3 +5,9 @@ bridge-app/mock_esp32.py
 __pycache__/
 
 .venv/
+
+# Gerado pelo container nginx a partir do .env
+dashboard/js/config.js
+
+# Credenciais do WiFi para o ESP32
+Esp32/secrets.py
