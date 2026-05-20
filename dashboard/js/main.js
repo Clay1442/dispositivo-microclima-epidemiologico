@@ -1,3 +1,4 @@
+
 // Estado global
 const state = {
   historico: { temperatura: [], umidade: [], pressao: [], luminosidade: [], labels: [] },
@@ -18,6 +19,11 @@ const cores = {
 
 // Cores por risco
 const coresRisco = {
+  // Valores do banco atual
+  'CRÍTICO':       '#ff4444',
+  'ALERTA':        '#ff8800',
+  'NORMAL':        '#00cc6a',
+  // Valores do mock/ESP32
   'RISCO MAXIMO':  '#ff4444',
   'RISCO ALTO':    '#ff8800',
   'RISCO MODERADO':'#ffb800',
@@ -27,6 +33,11 @@ const coresRisco = {
 };
 
 const iconsRisco = {
+  // Valores do banco atual
+  'CRÍTICO':       '⚠',
+  'ALERTA':        '▲',
+  'NORMAL':        '●',
+  // Valores do mock/ESP32
   'RISCO MAXIMO':  '⚠',
   'RISCO ALTO':    '▲',
   'RISCO MODERADO':'◆',
@@ -161,19 +172,27 @@ function adicionarLog(hora, status, dado, cor) {
 
 // Busca dados reais do InfluxDB via API Flux
 async function buscarDadosInflux() {
-  const url   = document.getElementById('influx-url').value.trim();
-  const token = document.getElementById('influx-token').value.trim();
+  const cfg    = window.SAVA_CONFIG || {};
+  const url    = cfg.influxUrl;
+  const token  = cfg.influxToken;
+  const bucket = cfg.influxBucket;
+  const org    = encodeURIComponent(cfg.influxOrg);
+
+  if (!url || !token) {
+    console.warn('SAVA_CONFIG não carregado — verifique se o container está rodando');
+    return;
+  }
 
   const query = `
-from(bucket: "microclima_bucket")
-  |> range(start: -2m)
+from(bucket: "${bucket}")
+  |> range(start: -30d)
   |> filter(fn: (r) => r._measurement == "clima")
   |> last()
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
 `;
 
   try {
-    const res = await fetch(`${url}/api/v2/query?org=projeto_iot`, {
+    const res = await fetch(`${url}/api/v2/query?org=${org}`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
@@ -273,5 +292,6 @@ function usarDadosMock() {
 
 // Init
 initChart();
+
 // Tenta conectar automaticamente ao carregar
 setTimeout(conectar, 500);
