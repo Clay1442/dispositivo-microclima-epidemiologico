@@ -3,6 +3,20 @@ import machine
 from bh1750 import BH1750	
 from bme280 import BME280
 import gc
+import ujson
+from umqtt.simple import MQTTClient
+
+# Configuração MQTT — coloque o IP do seu PC aqui
+MQTT_BROKER = "192.168.X.X"   # IP local do seu PC
+MQTT_PORT = 1883
+MQTT_CLIENT_ID = "esp32_microclima"
+MQTT_TOPIC = b"microclima/leituras"
+
+def conectar_mqtt():
+    client = MQTTClient(MQTT_CLIENT_ID, MQTT_BROKER, port=MQTT_PORT)
+    client.connect()
+    print("MQTT conectado!")
+    return client
 
 # --- CONSTANTES DE CONFIGURAÇÃO (Fácil de ajustar) ---
 TEMP_RISCO_MIN, TEMP_RISCO_MAX = 26.0, 28.0
@@ -70,9 +84,13 @@ except Exception as e:
 
 print("Iniciando loop principal do dispositivo...")
 
+# Conecta MQTT uma vez antes do loop
+mqtt_client = conectar_mqtt()
+
 while True:
     #Simulação de leituras de dados (já que não temos sensores conectados)
     print("--- Nova Leitura ---")
+
     print("Status: Sistema Operacional")
 
     #Garbage Coollector: Limpando a memória RAM do ESP32
@@ -95,10 +113,25 @@ while True:
         print(f"[{status}] {descricao}")
         print(f"T: {temp:.1f}°C | U: {umid:.1f}% | P: {press:.1f}hPa | L: {lux:.1f}lx")
         
+        # Monta payload JSON e publica no MQTT
+        payload = ujson.dumps({
+            "temperatura": temp,
+            "umidade": umid,
+            "pressao": press,
+            "luminosidade": lux,
+            "status_risco": status,
+            "descricao": descricao
+        })
+        mqtt_client.publish(MQTT_TOPIC, payload)
+        print("Dado enviado via MQTT.")
+
     except Exception as e:
         print(f"Erro na leitura: {e}") 
-        
-    
+            # Tenta reconectar se cair
+        try:
+            mqtt_client = conectar_mqtt()
+        except:
+            pass
     
     #Espera 5 segundos antes da próxima leitura
     time.sleep(INTERVALO_LEITURA)
