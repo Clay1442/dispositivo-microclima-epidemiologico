@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 load_dotenv()
 
 #Conexão InfluxDB
-INFLUX_URL = os.getenv("INFLUX_URL")
+INFLUX_URL = os.getenv("INFLUX_URL")    
 INFLUX_TOKEN = os.getenv("INFLUX_TOKEN")
 INFLUX_ORG = os.getenv("INFLUX_ORG")
 INFLUX_BUCKET = os.getenv("INFLUX_BUCKET")

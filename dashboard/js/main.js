@@ -183,12 +183,14 @@ async function buscarDadosInflux() {
     return;
   }
 
-  const query = `
+// Nota: Mantemos o range de -30d para garantir que acharemos o último dado cadastrado
+const query = `
 from(bucket: "${bucket}")
-  |> range(start: -30d)
+  |> range(start: -30d) 
   |> filter(fn: (r) => r._measurement == "clima")
-  |> last()
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> sort(columns: ["_time"])
+  |> tail(n: 1)
 `;
 
   try {
@@ -205,9 +207,34 @@ from(bucket: "${bucket}")
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const csv  = await res.text();
     const dado = parsearCSVInflux(csv);
+    
     if (dado) {
-      setConectado(true);
-      atualizarUI(dado);
+      // --- LÓGICA DE TIMEOUT COMPLETA ---
+      const agora = new Date();
+      const tempoDoDado = dado.timestamp;
+
+if (tempoDoDado) {
+        // Pega a diferença bruta em segundos 
+        let diferencaBruta = Math.abs(agora - tempoDoDado) / 1000;
+        
+        // TRUQUE: O operador % 3600 remove as horas inteiras do fuso horário
+        const atrasoReal = diferencaBruta % 3600; 
+        
+        const limiteTolerancia = 60; // Tolerância de 60s para perdoar o tempo de viagem da nuvem
+
+        if (atrasoReal <= limiteTolerancia) {
+          setConectado(true);  // Dado fresco: ESP32 está online
+        } else {
+          setConectado(false); // Dado antigo: ESP32 perdeu o sinal
+        }
+        
+        console.log(`Atraso real do dado: ${atrasoReal.toFixed(1)} segundos`);
+      }
+       else {
+        setConectado(false);   // Sem timestamp válido, assume desconectado
+      }
+
+      atualizarUI(dado); // Atualiza os números na tela mesmo se forem antigos
     }
   } catch(e) {
     setConectado(false);
@@ -231,7 +258,9 @@ function parsearCSVInflux(csv) {
       pressao:      parseFloat(obj.pressao)       || 0,
       luminosidade: parseFloat(obj.luminosidade)  || 0,
       status_risco: obj.status_risco || 'INDETERMINADO',
-      descricao:    obj.descricao    || ''
+      descricao:    obj.descricao    || '',
+      // Linha alterada: Captura o tempo exato em que o dado foi gravado
+      timestamp:    obj._time ? new Date(obj._time) : null 
     };
   } catch(e) { return null; }
 }
@@ -253,41 +282,6 @@ function conectar() {
   if (state.intervalo) clearInterval(state.intervalo);
   buscarDadosInflux();
   state.intervalo = setInterval(buscarDadosInflux, 5000);
-}
-
-// Modo demo com dados mock
-function usarDadosMock() {
-  if (state.intervalo) clearInterval(state.intervalo);
-  setConectado(true);
-
-  const riscos = ['RISCO MAXIMO', 'RISCO ALTO', 'RISCO MODERADO', 'RISCO BAIXO', 'RISCO MINIMO'];
-  const descs  = {
-    'RISCO MAXIMO':  'Condições PERFEITAS PARA PROLIFERAÇÃO',
-    'RISCO ALTO':    'Ambiente ideal para proliferação',
-    'RISCO MODERADO':'Condições favoráveis',
-    'RISCO BAIXO':   'Temperatura boa, mas umidade limitante',
-    'RISCO MINIMO':  'Condições adversas ao mosquito'
-  };
-
-  let i = 0;
-  function gerarMock() {
-    const base_temp = 26 + Math.sin(i * 0.1) * 3 + (Math.random() - 0.5);
-    const base_umid = 72 + Math.sin(i * 0.08) * 10 + (Math.random() - 0.5) * 2;
-    const status = riscos[Math.floor(Math.random() * riscos.length)];
-    const dado = {
-      temperatura:  parseFloat(base_temp.toFixed(1)),
-      umidade:      parseFloat(base_umid.toFixed(1)),
-      pressao:      parseFloat((1013 + Math.sin(i * 0.05) * 3).toFixed(1)),
-      luminosidade: parseFloat((150 + Math.random() * 400).toFixed(0)),
-      status_risco: status,
-      descricao:    descs[status]
-    };
-    atualizarUI(dado);
-    i++;
-  }
-
-  gerarMock();
-  state.intervalo = setInterval(gerarMock, 3000);
 }
 
 // Init

@@ -6,8 +6,8 @@ import gc
 import ujson
 from umqtt.simple import MQTTClient
 
-# Configuração MQTT — coloque o IP do seu PC aqui
-MQTT_BROKER = "192.168.0.10"   # IP local do seu PC
+# Configuração MQTT 
+MQTT_BROKER = "192.168.0.5"  # IP local do PC
 MQTT_PORT = 1883
 MQTT_CLIENT_ID = "esp32_microclima"
 MQTT_TOPIC = b"microclima/leituras"
@@ -19,7 +19,7 @@ def conectar_mqtt():
     return client
 
 
-# --- CONSTANTES DE CONFIGURAÇÃO (Fácil de ajustar) ---
+# --- CONSTANTES DE CONFIGURAÇÃO ---
 TEMP_RISCO_MIN, TEMP_RISCO_MAX = 26.0, 28.0
 UMID_RISCO_MIN, UMID_RISCO_MAX = 70.0, 80.0
 INTERVALO_LEITURA = 5 # segundos
