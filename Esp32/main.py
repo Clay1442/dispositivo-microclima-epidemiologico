@@ -7,7 +7,7 @@ import ujson
 from umqtt.simple import MQTTClient
 
 # Configuração MQTT 
-MQTT_BROKER = "192.168.0.5"  # IP local do PC
+MQTT_BROKER = "xxx.xxx.x.x"  # IP local do PC
 MQTT_PORT = 1883
 MQTT_CLIENT_ID = "esp32_microclima"
 MQTT_TOPIC = b"microclima/leituras"
